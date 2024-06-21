@@ -36,7 +36,6 @@ import subprocess #Kam importing subprocess for calling http.server to create a 
 import multipart
 import urllib
 from urllib.parse import urlparse
-
 try:
   sys.dont_write_bytecode = True
 except AttributeError:
@@ -189,7 +188,7 @@ def _LoadDatabase():
   """
 
   try:
-    f = _Open(INSTALL_PATH, DB_FILE)
+    f = _Open(INSTALL_PATH, DB_FILE, 'rb')
     #if os.stat(DB_FILE) == 0:
     #  os.remove(DB_FILE)
     stored_data = pickle.load(f)
@@ -691,7 +690,7 @@ class GruyereRequestHandler(BaseHTTPRequestHandler):
       url = 'http://%s:6666/' % (
              host, filename)
 
-    except IOError(ex):
+    except IOError:
       message = 'Couldn\'t write file %s: %s' % (filename, ex.message)
       _Log(message)
 
@@ -706,8 +705,17 @@ class GruyereRequestHandler(BaseHTTPRequestHandler):
     Returns:
       (filename, file_data)
     """
+
+    form = multipart.parse_form_data(
+      self.headers
+    )
+
+
+    #form = multipart.parse_form_data (
+    #  environ={'REQUEST_METHOD': 'POST',
+    #           'CONTENT_TYPE': self.headers['content-type']}
+    #)
     #print(self)
-    #form = multipart.parse_form(
     #    input_stream=self.rfile,
     #    headers=self.headers,
     ##    on_file=(),
@@ -715,10 +723,12 @@ class GruyereRequestHandler(BaseHTTPRequestHandler):
     #    #config={'REQUEST_METHOD': 'POST',
         #         'CONTENT_TYPE': self.headers['content-type']})
     #)
-
-    upload_file = self.rfile
-    file_data = upload_file.read()
-    return (upload_file.filename, file_data)
+    print(form)
+    
+    
+    file_name = message.get_filename()
+    file_data = message.get_payload()
+    return (file_name, file_data)
 
   def _MakeUserDirectory(self, uid):
     """Creates a separate directory for each user to avoid upload conflicts.
